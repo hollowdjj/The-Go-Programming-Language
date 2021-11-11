@@ -54,31 +54,47 @@ func Basename1(s string) string {
 //CommaInt 将一个表示整值的字符串，从后往前每隔三个字符插入一个逗号分隔符。例如“12345”处理后成为"12.345"
 func CommaInt(s string) string {
 	n := len(s)
-	if n < 3 {
+	if n <= 3 {
 		return s
 	}
 
-	return CommaInt(s[:n-3] + "." + s[n-3:])
+	return CommaInt(s[:n-3]) + "," + s[n-3:]
 }
 
 //CommaIntUsingBuffer 非递归版本的Comma函数，并使用bytes.Buffer代替字符串链接操作
 func CommaIntUsingBuffer(s string) string {
 	var buf bytes.Buffer
-	count := 0
-	for i := len(s) - 1; i >= 0; i-- {
-		fmt.Fprintf(&buf, "%c", s[i])
-		if count++; count == 3 {
-			buf.WriteByte('.')
+	q, r := len(s)/3, len(s)%3
+	if r > 0 {
+		buf.WriteString(s[:r] + ",")
+	}
+	for i := 0; i < q; i++ {
+		buf.WriteString(s[r:r+3] + ",")
+		r += 3
+	}
+	res := buf.String()
+	return res[:len(res)-1] //待测试
+}
+
+//Practice321 判断两个字符串是否是相互打乱的，即它们有着相同的字符，但顺序不一样
+func Practice321(s1, s2 string) bool {
+	m := make(map[rune]int)
+	for i, c := range s1 {
+		m[c] = i
+	}
+	for i, c := range s2 {
+		if j, ok := m[c]; !ok || i == j {
+			return false
 		}
 	}
-	return buf.String() //待测试
+	return true
 }
 
 //ByteSlice 展示string与byte slice间的相互转换
 func ByteSlice() {
 	/*
 		字符串是一个包含只读字节的数组，一旦创建就不可更改。然而，一个字节的slice中的元素是可以任意修改的。
-		并且，字符串和字节slice之间可以相互转换。
+		并且，字符串和字节slice之间可以相互转换。[]byte(s) 和 string(b)均发生了字符串的拷贝
 	*/
 	s := "test"
 	b := []byte(s)
