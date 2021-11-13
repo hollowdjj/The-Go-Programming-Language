@@ -1,10 +1,9 @@
 package main
 
 import (
-	"LearningGo/ch3"
-	"fmt"
+	"LearningGo/ch4"
 )
 
 func main() {
-	fmt.Println(ch3.CommaInt("12345"))
+	ch4.Practice47([]byte("Hello,世界a"))
 }
