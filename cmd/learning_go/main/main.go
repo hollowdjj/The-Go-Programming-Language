@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	ch4.Practice47([]byte("Hello,世界a"))
+	ch4.TestJson()
 }
