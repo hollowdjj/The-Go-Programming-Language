@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	ch4.TestJson()
+	ch4.Practice410()
 }
