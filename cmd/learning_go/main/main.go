@@ -1,7 +1,9 @@
 package main
 
-import "LearningGo/ch4"
+import (
+	"LearningGo/ch6"
+)
 
 func main() {
-	ch4.TestTemplate()
+	ch6.TestMethod()
 }

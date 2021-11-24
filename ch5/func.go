@@ -19,7 +19,7 @@ func TestSum() {
 	fmt.Println(sum(3))          // "3"
 	fmt.Println(sum(1, 2, 3, 4)) // "10"
 
-	//当原始参数已经是一个切片时，在传递给函数的可变类型时，需要在最后一个参数后加上省略符
+	//当原始参数已经是一个切片时，在传递给函数的可变类型时，需要在最后一个参数后加上省略符(可以理解为展开)
 	values := []int{1, 2, 3, 4}
 	fmt.Println(sum(values...))
 }
@@ -31,6 +31,10 @@ func double(x int) (result int) {
 }
 
 func Parse(input string) (err error) {
+	/*
+		如果在deferred函数中调用了内置函数recover，并且定义该defer语句的函数发生了panic异常，recover
+		会使程序从panic中恢复，并返回panic value。未发生panic异常时，recover函数返回nil。
+	*/
 	defer func() {
 		if p := recover(); p != nil {
 			err = fmt.Errorf("internal error: %v", p)
