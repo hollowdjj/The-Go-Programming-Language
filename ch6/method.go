@@ -118,10 +118,6 @@ func TestMethod2() {
 	time.AfterFunc(10*time.Second, r.Launch)
 }
 
-/*
-	除此之外，“方法值”在根据一个变量来决定调用同一个类型的哪个函数时，将非常有用(PS：这貌似很像多态，但实际不是)
-*/
-
 //TestMethod3 方法表达式
 func TestMethod3() {
 	p := Point{1, 2}
