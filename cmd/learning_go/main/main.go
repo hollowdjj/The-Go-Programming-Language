@@ -1,9 +1,7 @@
 package main
 
-import (
-	"LearningGo/ch6"
-)
+import "LearningGo/ch8"
 
 func main() {
-	ch6.TestMethod()
+	ch8.RunClockServer()
 }

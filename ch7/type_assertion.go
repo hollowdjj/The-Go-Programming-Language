@@ -81,3 +81,24 @@ func writeString(w io.Writer, s string) (n int, err error) {
 
 	return w.Write([]byte(s))
 }
+
+/*
+类型开关
+*/
+func sqlQuote(x interface{}) string {
+	switch x := x.(type) {
+	case nil:
+		return "NULL"
+	case int, uint:
+		return fmt.Sprintf("%d", x)
+	case bool:
+		if x {
+			return "TRUE"
+		}
+		return "FALSE"
+	case string:
+		return "RESULTS"
+	default:
+		panic(fmt.Sprintf("unexpected type %T: %v", x, x))
+	}
+}
