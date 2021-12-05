@@ -1,7 +1,10 @@
-package ch8
+package ch8_Goroutines_Channels
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"net/http"
 )
 
 /*
@@ -13,22 +16,16 @@ channel有不带缓存的和带缓存的两种类型。
 ch = make(chan int)     //不带缓存的
 ch = make(chan int,0)   //不带缓存的
 ch = make(chan int,3)   //带缓存的
+*/
 
+/*
 1. 不带缓存的channel
 在一个不带缓存的channel上执行信息发送操作，将导致该goroutine阻塞，直到另一个goroutine在相同的channel上执行的信息接收
 操作。当发送的值通过channel成功传输后，两个goroutine可以继续执行后面的语句。反之，若接收操作先发生，那么接收者goroutine
 也会阻塞，直到发送者goroutine通过同一个channel执行了发送操作。不带缓存的channel的这种阻塞性质，可以用来实现两个goroutine
 的同步。例如：当主goroutine必须要等待某个后台goroutine完成后才退出时，可以让后台goroutine在退出时向一个channel发送消息，
 主goroutine则从该channel接受消息。
-
-2. 带缓存的channel
-内部持有一个元素队列，该队列的最大容量在创建channel时由传入的第二个参数确定。向一个带缓存的channel中发送信息就是向内部
-缓存队列的尾部插入元素，接收操作则是从队列的头部删除元素。如果缓存区已满，那么发送操作将一直阻塞直到另一个goroutine执行
-了接收操作。对应的，如果缓存区为空，那么接收操作将一直阻塞直到有另一个goroutine执行了发送操作。
-
-内置的cap函数可以获取channel内部缓存区的容量，而len函数则获取的是channel内部缓存队列中有效元素的个数。
 */
-
 func test() {
 	//使用内置make函数创建一个可以发送int类型数据的channel，并返回其引用
 	ch1 := make(chan int)
@@ -52,7 +49,8 @@ func test() {
 }
 
 /*
-串联的channel(pipeline)，n个channels可以用n-1个goroutine连接在一起，从而形成所谓的管道(pipeline)，如test1。
+2.串联的channel(pipeline)
+n个channels可以用n-1个goroutine连接在一起，从而形成所谓的管道(pipeline)，如test1。
 理想情况下，一个大的函数一般需要拆分成多个函数，这几个函数通过channel连接即可(单方向的channel)。
 */
 func test1() {
@@ -64,14 +62,20 @@ func test1() {
 		for i := 0; i < 100; i++ {
 			usual <- i
 		}
-
+		//发送完数据后关闭channel，避免接收goroutine一直阻塞
+		close(usual)
 	}()
 
 	//receive and square
 	go func() {
+		/*
+			x,ok := <-usual，从channel中接收值时，第二个bool变量为true表示成功接收到值
+			为false表示没有值可以接收。但更为方便的是，range循环可以直接在channels上迭代。
+		*/
 		for x := range usual {
 			square <- x * x
 		}
+		//发送完数据后关闭channel，避免接收goroutine一直阻塞
 		close(square)
 	}()
 
@@ -80,6 +84,11 @@ func test1() {
 		fmt.Println(x)
 	}
 }
+
+/*
+3.单方向的channel
+chan<- int表示一个只发送int类型数据的channel，而<-chan int则表示一个只接收int类型数据的channel。
+*/
 
 //chan<- int表示一个只发送int的channel
 func counter(out chan<- int) {
@@ -101,4 +110,35 @@ func printer(in <-chan int) {
 	for x := range in {
 		fmt.Println(x)
 	}
+}
+
+/*
+4.带缓存的Channel
+内部持有一个元素队列，该队列的最大容量在创建channel时由传入的第二个参数确定。向一个带缓存的channel中发送信息就是向内部
+缓存队列的尾部插入元素，接收操作则是从队列的头部删除元素。如果缓存区已满，那么发送操作将一直阻塞直到另一个goroutine执行
+了接收操作。对应的，如果缓存区为空，那么接收操作将一直阻塞直到有另一个goroutine执行了发送操作。
+内置的cap函数可以获取channel内部缓存区的容量，而len函数则获取的是channel内部缓存队列中有效元素的个数。
+*/
+
+func MirroredQuery() string {
+	resp := make(chan string)
+	go func() { resp <- request("www.cnki.net") }()
+	go func() { resp <- request("www.baidu.com") }()
+	go func() { resp <- request("www.4399.com") }()
+	return <-resp
+}
+
+func request(hostname string) string {
+	resp, err := http.Get("https://" + hostname)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return string(b)
 }
