@@ -1,4 +1,4 @@
-package ch8
+package ch8_Goroutines_Channels
 
 import (
 	"flag"
