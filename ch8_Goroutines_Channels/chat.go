@@ -1,4 +1,4 @@
-package ch8
+package ch8_Goroutines_Channels
 
 import (
 	"bufio"
@@ -7,22 +7,22 @@ import (
 	"net"
 )
 
-type client chan<- string    //将client定义为一个只接收string类型数据的channel
+type client chan<- string //将client定义为一个只接收string类型数据的channel
 
 var (
-	entering = make(chan client)       //客户连接
-	leaving = make(chan client)        //客户断开连接
-	messages = make(chan string)       //消息
+	entering = make(chan client) //客户连接
+	leaving  = make(chan client) //客户断开连接
+	messages = make(chan string) //消息
 )
 
 func broadcaster() {
-	clients := make(map[client]bool)  //所有已连接的用户
+	clients := make(map[client]bool) //所有已连接的用户
 	for {
 		select {
-		case user := <- entering:
+		case user := <-entering:
 			clients[user] = true
 		case user := <-leaving:
-			delete(clients,user)
+			delete(clients, user)
 			close(user)
 		case msg := <-messages:
 			for user := range clients {
@@ -33,8 +33,8 @@ func broadcaster() {
 }
 
 func handleConnect(conn net.Conn) {
-	ch := make(chan string)    //这里的ch就是client
-	go clientWriter(conn,ch)
+	ch := make(chan string) //这里的ch就是client
+	go clientWriter(conn, ch)
 
 	who := conn.RemoteAddr().String()
 	ch <- "Me is " + who
@@ -46,26 +46,27 @@ func handleConnect(conn net.Conn) {
 		messages <- who + ": " + input.Text()
 	}
 
-	leaving  <- ch
+	leaving <- ch
 	messages <- who + "has left"
 	conn.Close()
 }
 
 //向客户端写数据
-func clientWriter(conn net.Conn,ch <-chan string) {
+func clientWriter(conn net.Conn, ch <-chan string) {
 	for msg := range ch {
-		fmt.Fprintln(conn,msg)
+		fmt.Fprintln(conn, msg)
 	}
 }
+
 // 允许用户通过服务器向与该服务器连接的其他用户广播消息。
 func Chat() {
-	listener,err := net.Listen("tcp","localhost:8000")
-	if err != nil{
+	listener, err := net.Listen("tcp", "localhost:8000")
+	if err != nil {
 		log.Fatal(err)
 	}
 	go broadcaster()
 	for {
-		conn,err := listener.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			log.Print(err)
 			continue
@@ -73,4 +74,3 @@ func Chat() {
 		go handleConnect(conn)
 	}
 }
-

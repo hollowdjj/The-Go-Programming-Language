@@ -1,7 +1,10 @@
 package main
 
-import "LearningGo/ch8"
+import (
+	"LearningGo/ch8_Goroutines_Channels"
+	"fmt"
+)
 
 func main() {
-	ch8.RunClockServer()
+	fmt.Println(ch8_Goroutines_Channels.MirroredQuery())
 }
