@@ -10,7 +10,8 @@ import (
 /*
 channels是goroutine间的通信机制，可用于从一个goroutine向另一个goroutine发送值信息。每个channel都有一个特殊的类型
 ，也就是channels可发送数据的类型。一个可以发送int类型数据的channel一般写为chan int。使用内置的make函数，可以创建一
-个channel。需要注意的是，channel和map一样，make函数返回的是一个底层数据结构的引用。
+个channel。需要注意的是，channel和map一样，make函数返回的是一个底层数据结构的引用。channel的零值为nil，向一个nil
+值得channel发送或接受数据都会导致阻塞。
 
 channel有不带缓存的和带缓存的两种类型。
 ch = make(chan int)     //不带缓存的
@@ -87,17 +88,17 @@ func test1() {
 
 /*
 3.单方向的channel
-chan<- int表示一个只发送int类型数据的channel，而<-chan int则表示一个只接收int类型数据的channel。
+chan<- int表示一个只能向其发送int类型数据的channel，而<-chan int则表示一个只能从其接收int类型数据的channel。
 */
 
-//chan<- int表示一个只发送int的channel
+//chan<- int表示一个只能向其发送int的channel
 func counter(out chan<- int) {
 	for x := 0; x < 100; x++ {
 		out <- x
 	}
 }
 
-//<-chan int表示一个只接收int的channel
+//<-chan int表示一个只能从其接收int的channel
 func squarer(out chan<- int, in <-chan int) {
 	//循环从channel中读取值，当没有值可以读取时，自动退出循环
 	for x := range in {

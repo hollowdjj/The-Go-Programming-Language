@@ -1,10 +1,7 @@
 package main
 
-import (
-	"LearningGo/ch8_Goroutines_Channels"
-	"fmt"
-)
+import "LearningGo/ch8_Goroutines_Channels"
 
 func main() {
-	fmt.Println(ch8_Goroutines_Channels.MirroredQuery())
+	ch8_Goroutines_Channels.EchoAdvanced()
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 )
 
 type client chan<- string //将client定义为一个只接收string类型数据的channel
@@ -25,40 +26,63 @@ func broadcaster() {
 			delete(clients, user)
 			close(user)
 		case msg := <-messages:
-			for user := range clients {
-				user <- msg
+			//广播消息
+			for cli := range clients {
+				go func(c client) {
+					c <- msg
+				}(cli)
+				//select {
+				//case cli <- msg:
+				//	//Do nothing
+				//default:
+				//	continue
+				//}
 			}
 		}
 	}
 }
 
 func handleConnect(conn net.Conn) {
-	ch := make(chan string) //这里的ch就是client
-	go clientWriter(conn, ch)
+	user := make(chan string, 10) //这里的ch就是client
+	go clientWriter(conn, user)
 
 	who := conn.RemoteAddr().String()
-	ch <- "Me is " + who
+	user <- "Me is " + who
 	messages <- who + "has arrived"
-	entering <- ch
+	entering <- user
 
+	//如果客户端静默时间超过了一定时间，则关闭连接
+	duratin := 10 * time.Second
+	tick := time.NewTimer(duratin)
 	input := bufio.NewScanner(conn)
-	for input.Scan() {
-		messages <- who + ": " + input.Text()
+loop:
+	for {
+		select {
+		case <-tick.C:
+			conn.Close()
+			break loop
+		default:
+			for input.Scan() {
+				messages <- who + ": " + input.Text()
+				tick.Reset(duratin)
+			}
+		}
 	}
 
-	leaving <- ch
+	leaving <- user
 	messages <- who + "has left"
 	conn.Close()
 }
 
 //向客户端写数据
-func clientWriter(conn net.Conn, ch <-chan string) {
-	for msg := range ch {
+func clientWriter(conn net.Conn, cli <-chan string) {
+	//只有当cli被close后，循环才会终止
+	for msg := range cli {
 		fmt.Fprintln(conn, msg)
 	}
 }
 
-// 允许用户通过服务器向与该服务器连接的其他用户广播消息。
+//Chat 允许用户通过服务器向与该服务器连接的其他用户广播消息。
 func Chat() {
 	listener, err := net.Listen("tcp", "localhost:8000")
 	if err != nil {

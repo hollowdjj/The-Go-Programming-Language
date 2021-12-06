@@ -22,7 +22,7 @@ func cancelled() bool {
 	}
 }
 
-//以os.FileInfo切片的形式返回目录dirname下的所有内容
+//以os.FileInfo切片的形式返回目录dirname下的所有内容(文件或目录)
 func dirents(dir string) []os.FileInfo {
 	select {
 	case sema <- struct{}{}:
