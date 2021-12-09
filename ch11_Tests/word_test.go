@@ -1,4 +1,4 @@
-package ch11
+package ch11_Tests
 
 import (
 	"math/rand"
@@ -43,16 +43,16 @@ func TestCanalPalindrme(t *testing.T) {
 	input := "A man, a plan, a canal: Panama"
 	//Bug：没有忽略空格和字母的大小写
 	if !IsPalindrome(input) {
-		t.Errorf(`IsPalindrome(%q) = false`,input)
+		t.Errorf(`IsPalindrome(%q) = false`, input)
 	}
 }
 
 //表格驱动的测试
 func TestIsPalindrome(t *testing.T) {
 
-	tests := []struct{
+	tests := []struct {
 		input string
-		want bool
+		want  bool
 	}{
 		{"", true},
 		{"a", true},
@@ -69,9 +69,9 @@ func TestIsPalindrome(t *testing.T) {
 		{"desserts", false},   // semi-palindrome
 	}
 
-	for _,test := range tests {
+	for _, test := range tests {
 		if got := IsPalindrome(test.input); got != test.want {
-			t.Errorf("IsPalindrome(%q) = %v",test.input,test.want)
+			t.Errorf("IsPalindrome(%q) = %v", test.input, test.want)
 		}
 	}
 }
@@ -84,7 +84,7 @@ func TestRandomPalindrome(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		p := randomPalindrome(rng)
 		if !IsPalindrome(p) {
-			t.Errorf("IsPalindrome(%q) = false",p)
+			t.Errorf("IsPalindrome(%q) = false", p)
 		}
 	}
 }
