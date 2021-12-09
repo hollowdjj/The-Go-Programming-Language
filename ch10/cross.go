@@ -16,7 +16,7 @@ import (
          test.go
          ...
        ch2/
-         bank.go
+         9.1_Race.go
          ...
        ....
       pkg/
@@ -52,7 +52,6 @@ net/http/httputil包导入(同一个父目录http)
 go list ...  查询工作区中的所有包
 */
 
-
 func Cross() {
-	fmt.Println(runtime.GOOS,runtime.GOARCH)
+	fmt.Println(runtime.GOOS, runtime.GOARCH)
 }

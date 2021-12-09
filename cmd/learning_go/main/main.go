@@ -1,7 +1,9 @@
 package main
 
-import "LearningGo/ch8_Goroutines_Channels"
+import (
+	"LearningGo/ch9_Variable_In_Concurency"
+)
 
 func main() {
-	ch8_Goroutines_Channels.EchoAdvanced()
+	ch9_Variable_In_Concurency.Bank1()
 }
