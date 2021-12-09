@@ -21,34 +21,38 @@ func httpGetBody(url string) (interface{}, error) {
 		return nil, err
 	}
 
+	//ReadAll函数会返回一个[]byte和error，而空接口可以传任何值
 	return ioutil.ReadAll(resp.Body)
 }
 
-//缓存函数类型
+//Func 要缓存结果的函数的类型
 type Func func(key string) (interface{}, error)
 
-//函数结果
+//result 函数结果
 type result struct {
 	value interface{}
 	err   error
 }
 
-type entry struct {
-	res   result
-	ready chan struct{} //closed when res is ready
-}
-
-//每一个Memo实例都会记录需要缓存的函数f以及不同的key值计算得到的结果
+//Memo 每一个Memo实例都会记录需要缓存的函数f以及不同的key值计算得到的结果
 type Memo struct {
 	f     Func
 	cache map[string]*entry
 	mu    sync.Mutex
 }
 
+//entry
+type entry struct {
+	res   result
+	ready chan struct{} //closed when res is ready
+}
+
+//New 返回一个缓存对象
 func New(f Func) *Memo {
 	return &Memo{f: f, cache: make(map[string]*entry)}
 }
 
+//Get 访问函数结果
 func (memo *Memo) Get(key string) (interface{}, error) {
 	//查询cache时需要互斥访问
 	memo.mu.Lock()
@@ -58,7 +62,7 @@ func (memo *Memo) Get(key string) (interface{}, error) {
 		e = &entry{ready: make(chan struct{})}
 		memo.cache[key] = e
 		memo.mu.Unlock()
-
+		//计算函数值。计算完后，关闭channel，相当于传播计算完毕的信号
 		e.res.value, e.res.err = memo.f(key)
 		close(e.ready)
 	} else {
