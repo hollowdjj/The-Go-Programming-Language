@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	ch9_Variable_In_Concurency.Bank1()
+	ch9_Variable_In_Concurency.Bank()
 }
