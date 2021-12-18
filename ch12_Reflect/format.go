@@ -8,6 +8,33 @@ import (
 	"strconv"
 )
 
+func testReflect() {
+	/*
+		reflect.Type(a)接受任意的interface{}类型，并以reflect.Type的形式返回其动态类型。
+		也就是说，reflect.Type函数的返回值为一个带有接口值a动态类型的reflect.Type对象。
+	*/
+	var w io.Writer = os.Stdout
+	fmt.Println(reflect.TypeOf(w)) //w是一个接口，其动态类型为*os.File，故打印值为*os.File
+	t := reflect.TypeOf(3)
+	fmt.Println(t) //int
+	/*
+		reflect.Value(a)同样是接受任意的interface{}类型。其返回值是一个装有接口值a动态值的
+		reflect.Value对象。对reflect.Value对象调用Type方法，将返回具体类型所对应的reflect.Type
+	*/
+	v := reflect.ValueOf(3)
+	fmt.Println(v)          //3
+	fmt.Println(v.String()) //<int Value>
+	fmt.Println(v.Type())   //int
+	/*
+		reflect.Value.Interface是reflect.ValueOf的逆操作。返回的是一个接口类型，装载着与reflect.Value
+		相同的具体值。
+	*/
+	d := reflect.ValueOf(3) //v是一个reflect.Value类型的对象
+	x := d.Interface()      //x是一个interface{}，其动态类型为int，动态值为3
+	i := x.(int)            //类型断言成功，返回动态值，即i的值为3
+	fmt.Println(i)
+}
+
 /*
 fmt.Fprintf函数可以对任意类型的值进行格式化并打印，甚至支持用户自定义的类型。
 下面尝试用Sprint函数实现一个类似的功能。
@@ -33,33 +60,71 @@ func Sprint(x interface{}) string {
 }
 
 /*
-反射由reflet包提供，它有两个重要的类型，Type以及Value，在test函数中有详细介绍。除此之外，还需要特别注意
-Kind和Type的区别。Go中的类型(Type)指的是原生数据类型，如int string bool float32等以及使用type关键字定
-义的用户类型，而Kind指的是对象归属的品种。Kind所表示的范围更大，类似于家用电器(Kind)和电视机(Type)间的对
-应关系。举例说明：
+利用反射实现任意类型值得格式化打印。需要注意的是，在go中由于type关键字，因此我们可以创造无穷无尽的类型。
+然而，所有这些类型的底层数据类型的数量确实有限的。
 */
 
-func test() {
-	//函数reflet.TypeOf接受任意类型的interface{}类型并以reflect.Type形式返回其动态类型：
-	t := reflect.TypeOf(3)  // 字面值3会隐式转换成一个接口类型，其动态类型为int，动态值为3
-	fmt.Println(t.String()) // "int"
-	fmt.Println(t)          // "int"
+func Any(value interface{}) string {
+	return formatAtom(reflect.ValueOf(value))
+}
 
-	//reflect.TypeOf返回的是一个动态类型的接口值，是一个具体类型：
-	var w io.Writer = os.Stdout
-	fmt.Println(reflect.TypeOf(w)) // 打印"*os.File"，因为os.Stdout是一个*os.File类型的包一级变量
+func formatAtom(v reflect.Value) string {
+	//v.Kind返回的是v所装载的值的底层类型
+	switch v.Kind() {
+	case reflect.Invalid:
+		return "invalid"
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		//返回v的值，但类型为Int64。若v.Kind()不是以上任意一种类型的话，会panic
+		//strconv.FormatInt(i int64,base int)是指将i转换成“base"进制的数。
+		return strconv.FormatInt(v.Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return strconv.FormatUint(v.Uint(), 10)
+	case reflect.Bool:
+		return strconv.FormatBool(v.Bool())
+	case reflect.String:
+		return strconv.Quote(v.String())
+	//......
+	default:
+		return v.Type().String() + "value"
+	}
+}
 
-	//函数reflet.VauleOf接收一个任意类型的接口值，然后返回装载着该接口值的动态值的reflect.Value
-	v := reflect.ValueOf(3) // v是一个reflect.Value类型的变量，其内保存有3这个值
-	fmt.Println(v)          // "3"
-	fmt.Printf("%v\n", v)   // "3"
-	fmt.Println(v.String()) // "<int,Value>"
-	//而对v调用Type方法，会返回具体类型对应的reflect.Type:
-	t = v.Type()          // t是一个reflect.Type类型的变量
-	fmt.Print(t.String()) // "int"
+/*
+通过reflect.Value修改值，即可取地址的reflect.Value
+*/
+func reflectChangeValue() {
+	x := 2
+	/*
+		所有通过reflect.ValueOf(x)返回的reflect.Value都是不可取地址的。但是对于变量d，他是c解引用
+		方式生成的，指向另一个变量，因而是可以取地址的。我们可以通过调用reflect.ValueOf(&x).Elem()
+		来获取任意变量x对应的可取地址的value。通过调用reflect.Value的CanAddr方法可以判断其是否可以
+		被取地址。
+	*/
+	a := reflect.ValueOf(2)
+	b := reflect.ValueOf(x)
+	c := reflect.ValueOf(&x) //只有参数为指针时，返回的reflect.Value才是可取地址的
+	d := c.Elem()
 
-	//reflect.Value.Interface函数返回一个interface类型，装载着与reflect.Value相同的动态值
-	x := v.Interface() //x是一个动态类型为int，动态值为3的接口值
-	i := x.(int)       //类型断言，i即为x的动态值
-	fmt.Printf("%d\n", i)
+	fmt.Println(a.CanAddr())
+	fmt.Println(b.CanAddr())
+	fmt.Println(c.CanAddr())
+	fmt.Println(d.CanAddr())
+
+	/*
+		要从一个变量对应的可取地址的reflect.Value来访问变量需要三个步骤：
+		1. 调用Addr方法，它返回一个Value，里面保存了指向变量的指针
+		2. 在Value上调用Interface()方法，它返回的是一个interface{}，里面包含有指向变量的指针(其实就是把reflect.Value转换成interface{})
+		3. 在interface上使用类型断言，即可获取接口值的动态类型，也即指向变量x的指针
+	*/
+	y := 2
+	v := reflect.ValueOf(&y).Elem()
+	px := v.Addr().Interface().(*int)
+	*px = 3
+	fmt.Println(y)
+	/*
+		或者，不使用指针，而是直接在一个可取地址的reflect.Value的Set方法直接
+		更新变量的值
+	*/
+	v.Set(reflect.ValueOf(4))
+
 }

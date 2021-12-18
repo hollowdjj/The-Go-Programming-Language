@@ -86,6 +86,7 @@ func writeString(w io.Writer, s string) (n int, err error) {
 类型开关
 */
 func sqlQuote(x interface{}) string {
+	//x.(type)只能在switch语句中使用，提取x的动态类型
 	switch x := x.(type) {
 	case nil:
 		return "NULL"
